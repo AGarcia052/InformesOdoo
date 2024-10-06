@@ -1,0 +1,154 @@
+<t t-name="account.report_invoice_document">
+        <t t-set="o" t-value="o.with_context(lang=lang)"/>
+        
+        
+        <div class="row">
+                    <t t-if="o.partner_shipping_id and (o.partner_shipping_id != o.partner_id)">
+                        <div class="col-6" name="address_not_same_as_shipping">
+                                <div t-if="o.partner_id.vat" id="partner_vat_address_not_same_as_shipping"/>
+                        </div>
+                    </t>
+                    <t t-elif="o.partner_shipping_id and (o.partner_shipping_id == o.partner_id)">
+                        <div class="offset-col-6 col-6" name="address_same_as_shipping">
+                                <div t-if="o.partner_id.vat" id="partner_vat_address_same_as_shipping"/>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="offset-col-6 col-6" name="no_shipping">
+                            <div t-if="o.partner_id.vat" id="partner_vat_no_shipping"/>
+                        </div>
+                    </t>
+        </div>
+        
+        
+        <div class="container-fluid mb-5">
+            <div class="row" style="background-color: #eeeeee">
+                <div class="col-12">
+                    <t t-if="o.company_id.logo">
+                        <img t-att-src="'data:image/png;base64,%s' % (o.company_id.logo)" class="img-fluid"/>
+                    </t>
+                </div>
+                <div class="col-12 mt-2">
+                    <h2 t-field="o.company_id.name" class="mb-0"/>
+                    <p t-if="o.company_id.street" t-field="o.company_id.street"/>
+                    <p t-if="o.company_id.city" t-field="o.company_id.city"/>
+                    <p t-if="o.company_id.zip" t-field="o.company_id.zip"/>
+                    <p t-if="o.company_id.country_id.name" t-field="o.company_id.country_id.name"/>
+                    <p t-if="o.company_id.phone" t-field="o.company_id.phone"/>
+                    <p t-if="o.company_id.email" t-field="o.company_id.email"/>
+                </div>
+            </div>
+        </div>
+
+     
+        <div class="container">
+            <div class="row" style="font-weight: bold; background-color: #8ba6c2">
+                <div class="col text-center">Nombre</div>
+                <div class="col text-center">Apellidos</div>
+                <div class="col text-center">Dirección</div>
+            </div>
+            <div class="row" style="background-color: #dce4ec">
+                <div class="col text-center"><span t-field="o.partner_id.name"/></div>
+                <div class="col text-center"><span t-field="o.partner_id.commercial_partner_id.name"/></div>
+                <div class="col text-center"><span t-field="o.partner_id.contact_address"/></div>
+            </div>
+        </div>
+
+
+        <t t-if="o.state == 'paid'">
+            <div class="mt-5 ml-5" style="background-color: #a2ba89">
+                <span>Factura "<t t-esc="o.name"/>" pagada: "<t t-esc="o.name"/>"</span>.
+            </div>
+        </t>
+        <t t-else="">
+            <div class="mt-5" style="background-color: #e57f7f">
+                <span>Factura "<t t-esc="o.name"/>" a la espera de pago.</span>
+            </div>
+        </t>
+        
+      
+
+        <t t-set="lines" t-value="o.invoice_line_ids.sorted(key=lambda l: (-l.sequence, l.date, l.move_name, -l.id), reverse=True)"/>
+
+
+        <t t-set="current_subtotal" t-value="0"/>
+        <t t-set="current_total" t-value="0"/>
+        <t t-foreach="lines" t-as="line">
+            <t t-set="current_subtotal" t-value="current_subtotal + line.price_subtotal"/>
+            <t t-set="current_total" t-value="current_total + line.price_total"/>
+
+
+        
+
+
+            <div class="row mt-5" style="background-color: #8ba6c2">
+                <div class="col text-center">Nombre</div>
+                <div class="col text-center">Unidades</div>
+                <div class="col text-center">Tasas</div>
+                <div class="col text-center">Precio</div>
+                <div class="col text-center">Precio de las tasas</div>
+                <div class="col text-center">Total con tasas</div>
+            
+            </div>
+            <div class="row pt-3" style="background-color: #dce4ec">
+                <div class="col text-center" t-field="line.name"/>
+                <div class="col text-center" t-field="line.quantity"/>
+                <div class="col text-center" t-field="line.tax_ids"/>
+                <div class="col text-center" t-field="line.price_unit"/>
+                <div class="col text-center">
+                <t t-esc="line.price_total - line.price_subtotal"/>
+                </div>
+                <div class="col text-center" t-field="line.price_total"/>
+            </div>
+        
+        <div class="row mt-2" style="background-color: #8ba6c2">
+            <div class="col text-center font-weight-bold">Total tasas</div>
+            <div class="col text-center font-weight-bold">Total de productos</div>
+        </div>
+        
+        
+        <t t-set="tasas_totales" t-value="0"/>
+        <t t-set="cantidad_total" t-value="0"/>
+
+        <t t-foreach="lines" t-as="line">
+            <t t-set="tasas_totales" t-value="tasas_totales + (line.price_total - line.price_subtotal)"/>
+            <t t-set="cantidad_total" t-value="cantidad_total + line.quantity"/>
+        </t>
+
+
+        <div class="row pt-1" style="background-color: #dce4ec">
+            <div class="col text-center" t-esc="tasas_totales"/>
+            <div class="col text-center" t-esc="cantidad_total"/>
+        </div>
+        
+        <h2 class="mt-5">Precio Total</h2>
+        <div class="row" style="background-color: #8ba6c2">
+            <div class="col text-center">Subtotal</div>
+            <div class="col text-center">Total</div>
+            <t t-if="o.state == paid">
+                <div class="col text-center">Capital Amortizado</div>
+                <div class="col text-center">Dinero pendiente de pago</div>
+            </t>
+        </div>
+        <div class="row pt-2" style="background-color: #dce4ec">
+            <div class="col text-center" t-out="current_subtotal"/>
+            <div class="col text-center" t-out="current_total"/>
+            <t t-if="o.state == paid">
+                <div class="col text-center">
+                <t t-esc="line.price_total - line.product_id.standard_price"/>
+                </div>
+                <div class="col text-center">
+                <t t-esc="o.amount_residual"/>
+                </div>
+                
+                
+           </t>
+        </div>
+        <t t-if="o.state == 'paid'">
+            <div class="mt-5">
+               <!--<<p>Fecha de pago: <t t-esc="o.create_date"/></p>-->
+            </div>
+        </t>
+        
+    </t>
+</t>
